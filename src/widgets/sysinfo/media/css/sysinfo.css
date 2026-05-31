@@ -1,0 +1,269 @@
+/*
+ * Copyright (c) 2026 Besnovatyj. Licensed under the MIT License.
+ */
+
+/**
+ * Стили для виджета системной информации
+ * Кастомизация Bootstrap 5 компонентов
+ */
+
+/* === Общие стили === */
+.sysinfo-widget {
+    margin-bottom: 2rem;
+}
+
+.sysinfo-header {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+/* === Статус бейдж === */
+#sysinfo-status-badge {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+}
+
+/* === Карточки === */
+.sysinfo-widget .card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.sysinfo-widget .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.sysinfo-widget .card-header {
+    font-weight: 600;
+    font-size: 0.938rem;
+}
+
+.sysinfo-widget .card-body {
+    padding: 1rem;
+}
+
+/* === Progress bars === */
+.sysinfo-widget .progress {
+    height: 1.25rem;
+    border-radius: 0.25rem;
+}
+
+.sysinfo-widget .progress-bar {
+    transition: width 0.6s ease;
+}
+
+/* === Таблицы === */
+.sysinfo-widget .table {
+    margin-bottom: 0;
+}
+
+.sysinfo-widget .table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.025);
+}
+
+.sysinfo-widget .table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.sysinfo-widget .table td {
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+
+/* === Вкладки === */
+.sysinfo-widget .nav-tabs .nav-link {
+    color: #495057;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-weight: 500;
+}
+
+.sysinfo-widget .nav-tabs .nav-link:hover {
+    border-color: transparent;
+    border-bottom-color: #dee2e6;
+}
+
+.sysinfo-widget .nav-tabs .nav-link.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    background-color: transparent;
+}
+
+/* === Docker логи модалка === */
+#docker-logs-content {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.813rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+#docker-logs-content code {
+    color: #e0e0e0;
+    background: transparent;
+}
+
+/* === Placeholder анимация === */
+.placeholder-glow .placeholder {
+    animation: placeholder-glow 2s ease-in-out infinite;
+}
+
+@keyframes placeholder-glow {
+    50% {
+        opacity: 0.2;
+    }
+}
+
+/* === Кнопки === */
+.sysinfo-widget .btn-group .btn {
+    font-size: 0.875rem;
+}
+
+.sysinfo-widget .docker-logs-btn {
+    font-size: 0.813rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* === Адаптивность === */
+@media (max-width: 768px) {
+    .sysinfo-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .sysinfo-header .btn-group {
+        margin-top: 0.75rem;
+        width: 100%;
+    }
+
+    .sysinfo-header .btn-group .btn {
+        font-size: 0.813rem;
+        padding: 0.375rem 0.5rem;
+    }
+
+    .sysinfo-widget .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sysinfo-widget .nav-tabs .nav-link {
+        white-space: nowrap;
+        font-size: 0.813rem;
+    }
+}
+
+/* === Графики Chart.js === */
+.sysinfo-widget canvas {
+    max-height: 300px;
+}
+
+/* === Монопространственный шрифт для кода === */
+.sysinfo-widget code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.875rem;
+}
+
+/* === Значки статуса контейнеров === */
+.sysinfo-widget .badge {
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+}
+
+/* === Цвета для различных состояний === */
+.bg-success-light {
+    background-color: rgba(25, 135, 84, 0.1);
+}
+
+.bg-warning-light {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.bg-danger-light {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.bg-info-light {
+    background-color: rgba(13, 202, 240, 0.1);
+}
+
+/* === Модальные окна === */
+.modal-xl {
+    max-width: 90%;
+}
+
+.modal-dialog .modal-content {
+    border-radius: 0.5rem;
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+}
+
+/* === Улучшенная типографика === */
+.sysinfo-widget h5 {
+    font-weight: 600;
+    font-size: 1.125rem;
+}
+
+.sysinfo-widget small {
+    font-size: 0.813rem;
+}
+
+.sysinfo-widget .text-muted {
+    color: #6c757d !important;
+}
+
+/* === Настройки модалка === */
+#settingsModal .form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+#settingsModal .form-control {
+    border-radius: 0.375rem;
+}
+
+#settingsModal .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+}
+
+/* === Анимация загрузки === */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* === Прокрутка в логах === */
+#docker-logs-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+#docker-logs-content::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+#docker-logs-content::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+#docker-logs-content::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
