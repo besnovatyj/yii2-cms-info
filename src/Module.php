@@ -7,33 +7,20 @@
 
 namespace Besnovatyj\Info;
 
-class Module extends \common\components\module\BaseModule
+use common\components\module\CmsModule;
+use modules\modmanNew\contract\DeclaresModule;
+use modules\modmanNew\contract\ProvidesAdminMenu;
+
+class Module extends CmsModule implements
+    DeclaresModule, ProvidesAdminMenu
 {
     public const bool EDITABLE = YII_DEBUG;
-
-    public static function getAdminMenu(): array
-    {
-        return require __DIR__ . '/config/adminMenu.php';
-    }
-
-    public static function getConfig(): array
-    {
-        return require __DIR__ . '/config/config.php';
-    }
-
-    public static function getOptions(): array
-    {
-        return require __DIR__ . '/config/options.php';
-    }
-
-    public static function getDependencies(): array
-    {
-        return require __DIR__ . '/config/dependencies.php';
-    }
-
-    public static function setContainerConfig()
-    {
-        return (require __DIR__ . '/config/container.php')(\Yii::$container);
-    }
+    public const string VERSION = '1.0.0';
+    public const string MODULE_ID = 'Info';
+    public static function moduleId(): string { return self::MODULE_ID; }
+    public static function moduleVersion(): string { return self::VERSION; }
+    public static function isEditable(): bool { return self::EDITABLE; }
+    public static function adminMenu(): array { return require __DIR__.'/config/adminMenu.php'; }
+    public static function moduleConfig(): array { return require __DIR__.'/config/config.php'; }
 
 }
