@@ -69,7 +69,6 @@ export class ApiService {
         const headers = new Headers();
         headers.append('X-CSRF-Token', this.csrfToken);
         headers.append('X-Requested-With', 'XMLHttpRequest');
-        headers.append('X-Requested-With-Fetch', 'true');
         headers.append('Accept', 'application/json');
         return headers;
     }
