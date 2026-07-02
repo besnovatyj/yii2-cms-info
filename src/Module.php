@@ -8,8 +8,8 @@
 namespace Besnovatyj\Info;
 
 use common\components\module\CmsModule;
-use modules\modman\contract\DeclaresModule;
-use modules\modman\contract\ProvidesAdminMenu;
+use Besnovatyj\Contracts\module\DeclaresModule;
+use Besnovatyj\Contracts\module\ProvidesAdminMenu;
 
 class Module extends CmsModule implements
     DeclaresModule, ProvidesAdminMenu
