@@ -1,7 +1,6 @@
 {
   "name": "besnovatyj/yii2-cms-info",
   "description": "Модуль просмотра информации о сервере и приложении",
-  "version": "1.0.0",
   "type": "yii2-extension",
   "license": "MIT",
   "authors": [
