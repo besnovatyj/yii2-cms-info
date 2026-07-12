@@ -6,7 +6,7 @@
 
 return [
     // System Info
-
+    [
         'label' => 'System info',
         'iconClass' => 'bi bi-info-square me-1',
         'url' => ['/Info/backend/sys-info/index'],
@@ -27,5 +27,5 @@ return [
                 ],
             ],
         ],
-
+    ]
 ];
