@@ -14,7 +14,7 @@ use Besnovatyj\Contracts\module\ProvidesAdminMenu;
 class Module extends CmsModule implements
     DeclaresModule, ProvidesAdminMenu
 {
-    public const bool EDITABLE = YII_DEBUG;
+    public const bool EDITABLE = true;
     public const string VERSION = '1.0.0';
     public const string MODULE_ID = 'Info';
     public static function moduleId(): string { return self::MODULE_ID; }
