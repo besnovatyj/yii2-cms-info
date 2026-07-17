@@ -119,7 +119,10 @@ class SystemMetricProvider extends BaseMetricProvider
                 return $content ? trim($content[0]) : 'Unknown Linux';
             }
 
-            $releaseInfo = @parse_ini_file($name);
+            // parse_ini_file может быть в disable_functions (hardening FPM): @ не гасит
+            // fatal Error от отключённой функции, поэтому проверяем доступность явно —
+            // иначе весь блок system-метрик падает. Нет функции → фоллбэк на php_uname() ниже.
+            $releaseInfo = function_exists('parse_ini_file') ? @\parse_ini_file($name) : false;
 
             if (isset($releaseInfo['DISTRIB_DESCRIPTION'])) {
                 return $releaseInfo['DISTRIB_DESCRIPTION'];
