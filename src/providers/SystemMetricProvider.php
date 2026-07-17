@@ -65,13 +65,26 @@ class SystemMetricProvider extends BaseMetricProvider
     private function getServerInfo(): array
     {
         return [
-            'hostname' => php_uname('n'),
+            'hostname' => $this->phpUname('n'),
             'serverAddr' => $this->getServerAddr(),
             'remoteAddr' => $this->getRemoteAddr(),
             'os' => $this->getDistName(),
-            'kernel' => php_uname('r'),
-            'architecture' => php_uname('m'),
+            'kernel' => $this->phpUname('r'),
+            'architecture' => $this->phpUname('m'),
         ];
+    }
+
+    /**
+     * Обёртка над php_uname: функция может быть в disable_functions (hardening FPM),
+     * а @ не гасит fatal Error от отключённой функции. Нет функции → пустая строка,
+     * вызывающий код деградирует (поле метрики остаётся пустым, а не роняет блок).
+     *
+     * @param string $mode режим php_uname ('n','r','m','s',...)
+     * @return string
+     */
+    private function phpUname(string $mode): string
+    {
+        return function_exists('php_uname') ? (string)php_uname($mode) : '';
     }
 
     /**
@@ -85,7 +98,8 @@ class SystemMetricProvider extends BaseMetricProvider
             return $_SERVER['SERVER_ADDR'];
         }
 
-        return gethostbyname(php_uname('n'));
+        $host = $this->phpUname('n');
+        return $host !== '' ? gethostbyname($host) : 'unknown';
     }
 
     /**
@@ -113,7 +127,8 @@ class SystemMetricProvider extends BaseMetricProvider
      */
     private function getDistName(): string
     {
-        foreach (glob('/etc/*release') as $name) {
+        // glob при ошибке/open_basedir возвращает false → foreach(false) даёт warning; ?: [] страхует.
+        foreach (glob('/etc/*release') ?: [] as $name) {
             if (in_array($name, ['/etc/centos-release', '/etc/redhat-release', '/etc/system-release'])) {
                 $content = $this->safeFileReadLines($name);
                 return $content ? trim($content[0]) : 'Unknown Linux';
@@ -133,7 +148,8 @@ class SystemMetricProvider extends BaseMetricProvider
             }
         }
 
-        return php_uname('s') . ' ' . php_uname('r');
+        $os = trim($this->phpUname('s') . ' ' . $this->phpUname('r'));
+        return $os !== '' ? $os : 'Unknown';
     }
 
     /**
@@ -304,6 +320,13 @@ class SystemMetricProvider extends BaseMetricProvider
      */
     private function getDiskInfo(): array
     {
+        // disk_*_space — частые кандидаты в disable_functions (hardening FPM); @ не гасит
+        // fatal Error от отключённой функции, поэтому проверяем доступность до вызова —
+        // тот же класс проблемы, что с parse_ini_file. Нет функции → метрика диска пропускается.
+        if (!function_exists('disk_total_space') || !function_exists('disk_free_space')) {
+            return [];
+        }
+
         $total = @disk_total_space('.');
         $free = @disk_free_space('.');
 
