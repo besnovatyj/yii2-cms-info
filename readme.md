@@ -35,6 +35,7 @@
 
 ✅ **Метрики сервисов**
 - PHP: версия, SAPI, memory_limit, OPcache
+- Nginx: версия, HTTP-протокол (HTTP/2), HTTPS, TLS-протокол/шифр текущего соединения
 - MySQL: версия, размер БД, количество таблиц, соединения
 - Redis: версия, uptime, клиенты, память, ключи
 - Yii2: версия, окружение, debug, кэш, очередь
@@ -138,6 +139,7 @@
 │  │  DockerMetricProvider                        │  │
 │  │  DatabaseMetricProvider                      │  │
 │  │  RedisMetricProvider                         │  │
+│  │  NginxMetricProvider                         │  │
 │  │  ApplicationMetricProvider                   │  │
 │  └──────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────┘
@@ -207,6 +209,8 @@ protected function safeFileReadLines(string $path): ?array;
 - `/proc/net/dev` - сетевые интерфейсы
 - `/proc/uptime` - время работы системы
 - `/sys/class/thermal/thermal_zone*/temp` - температура
+
+> Прим.: обёртка `phpUname()` и явные проверки `function_exists()` для `parse_ini_file`/`disk_*_space` защищают от FPM-hardening (`disable_functions`) — при отключённой функции блок деградирует, а не роняет весь сбор метрик.
 
 **Возвращаемая структура:**
 ```php
@@ -486,6 +490,63 @@ DBSIZE
 ]
 ```
 
+#### NginxMetricProvider
+
+Собирает информацию о веб-сервере Nginx.
+
+**Расположение:** `/src/providers/NginxMetricProvider.php`
+
+**Источники данных (без shell, работает под FPM-hardening):**
+- `$_SERVER['SERVER_SOFTWARE']` — версия (стоковый `fastcgi_params` передаёт `nginx/$nginx_version`)
+- `$_SERVER['SERVER_PROTOCOL']` — протокол запроса (`HTTP/2.0`, `HTTP/1.1`)
+- `$_SERVER['HTTPS']` / `REQUEST_SCHEME` / `SERVER_PORT` — признак TLS
+- `$_SERVER['SSL_PROTOCOL']` / `SSL_CIPHER` — живой TLS-протокол и шифр (только если проброшены через `fastcgi_param`, см. ниже)
+
+**Резервные источники (только bare-metal, если `shell_exec` не в `disable_functions`):**
+- `nginx -v` — версия, когда `SERVER_SOFTWARE` скрыт/переопределён
+- `nginx -V` — TLS-библиотека сборки (OpenSSL) и число `--with-*_module`
+
+В dev nginx работает в отдельном контейнере — бинаря в php-контейнере нет, резервные вызовы тихо деградируют, версия берётся из `SERVER_SOFTWARE`.
+
+**Возвращаемая структура:**
+```php
+[
+    'version' => '1.29.0',
+    'serverSoftware' => 'nginx/1.29.0',
+    'protocol' => 'HTTP/2.0',
+    'http2' => true,
+    'http3' => false,
+    'https' => true,
+    'scheme' => 'https',
+    'gateway' => 'CGI/1.1',
+    'tls' => [
+        // state: 'ok' | 'plain' | 'absent' — самодиагностика проброса SSL_*
+        'state' => 'ok',
+        'protocol' => 'TLSv1.3',
+        'cipher' => 'TLS_AES_256_GCM_SHA384'
+    ],
+    'build' => [
+        'tlsLibrary' => 'OpenSSL 3.0.13',
+        'modulesCount' => 27
+    ]
+]
+```
+
+**Состояния `tls.state` (для отладки конфигурации):**
+
+| state | Значение | Причина |
+|-------|----------|---------|
+| `ok` | TLS завершается на nginx, есть протокол/шифр | всё настроено |
+| `plain` | `SSL_*` проброшены, но пустые | запрос к nginx без TLS (dev `listen 80` или терминация выше по стеку) |
+| `absent` | ключей `SSL_*` нет в `$_SERVER` | `fastcgi_param` не добавлен в этот `location`/vhost, либо nginx не перечитан |
+
+**Проброс живого TLS (опционально).** Стоковый `fastcgi_params` не передаёт TLS-параметры. Чтобы блок `tls.state = ok` заполнялся, добавьте **внутри** `location ~ \.php$` (nginx наследует `fastcgi_param` от родителя только если в location нет собственных — а он есть):
+```nginx
+fastcgi_param SSL_PROTOCOL $ssl_protocol;
+fastcgi_param SSL_CIPHER   $ssl_cipher;
+```
+Это read-only, несекретные значения (клиент их и так знает) — безопасно для production. На проде с Certbot добавляйте в шаблон и **пересоздавайте** :443-блоки certbot'ом, иначе параметр попадёт лишь в неиспользуемый :80-блок.
+
 #### ApplicationMetricProvider
 
 Собирает информацию о Yii2 приложении.
@@ -545,6 +606,7 @@ public function __construct(
     DockerMetricProvider $dockerProvider,
     DatabaseMetricProvider $databaseProvider,
     RedisMetricProvider $redisProvider,
+    NginxMetricProvider $nginxProvider,
     ApplicationMetricProvider $applicationProvider
 )
 ```
@@ -563,6 +625,7 @@ public function __construct(
     'docker' => [...],      // DockerMetricProvider
     'database' => [...],    // DatabaseMetricProvider
     'redis' => [...],       // RedisMetricProvider
+    'nginx' => [...],       // NginxMetricProvider
     'application' => [...]  // ApplicationMetricProvider
 ]
 ```
@@ -731,6 +794,7 @@ return [
         DockerMetricProvider::class => DockerMetricProvider::class,
         DatabaseMetricProvider::class => DatabaseMetricProvider::class,
         RedisMetricProvider::class => RedisMetricProvider::class,
+        NginxMetricProvider::class => NginxMetricProvider::class,
         ApplicationMetricProvider::class => ApplicationMetricProvider::class,
         SysInfoService::class => [
             'class' => SysInfoService::class,
@@ -740,6 +804,7 @@ return [
                 'dockerProvider' => Instance::of(DockerMetricProvider::class),
                 'databaseProvider' => Instance::of(DatabaseMetricProvider::class),
                 'redisProvider' => Instance::of(RedisMetricProvider::class),
+                'nginxProvider' => Instance::of(NginxMetricProvider::class),
                 'applicationProvider' => Instance::of(ApplicationMetricProvider::class),
             ],
         ],
@@ -985,7 +1050,9 @@ if (system.network && typeof system.network === 'object') {
 ```
 
 **`renderServices(metrics)`**
-Вкладка Services - PHP, MySQL, Redis, Yii2.
+Вкладка Services - PHP, Nginx, MySQL, Redis, Yii2.
+
+Карточка Nginx показывает бейдж протокола (зелёный `HTTP/2` или жёлтый с фактическим протоколом) и строку TLS по `nginx.tls.state`: `ok` → «протокол / шифр», `plain` → «запрос без TLS», `absent` → предупреждение «SSL_* не проброшен».
 
 **Проверка наличия полных данных:**
 ```typescript
@@ -1475,6 +1542,14 @@ export default defineConfig({
         "stats": {...},
         "keyspace": {...}
     },
+    "nginx": {
+        "available": true,
+        "version": "1.29.0",
+        "protocol": "HTTP/2.0",
+        "http2": true,
+        "https": true,
+        "tls": {...}
+    },
     "application": {
         "available": true,
         "yii": {...},
@@ -1653,6 +1728,15 @@ class SysInfoAsset extends AssetBundle
 - max_execution_time, post_max_size, etc.
 - OPcache status (enabled, memory, hit rate)
 - Loaded extensions list
+
+### Nginx Metrics
+
+- Version (из `SERVER_SOFTWARE`, резерв — `nginx -v`)
+- Server software (сырая строка)
+- HTTP-протокол запроса + флаги `http2` / `http3`
+- HTTPS / scheme / gateway (FastCGI)
+- TLS текущего соединения: state (`ok`/`plain`/`absent`), протокол, шифр
+- Build: TLS-библиотека (OpenSSL) и число модулей (только bare-metal через `nginx -V`)
 
 ### Docker Metrics
 

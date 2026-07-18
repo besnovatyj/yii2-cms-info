@@ -154,24 +154,39 @@ class NginxMetricProvider extends BaseMetricProvider
     }
 
     /**
-     * Живые параметры TLS текущего соединения (протокол/шифр).
+     * Живые параметры TLS текущего соединения (протокол/шифр) с самодиагностикой.
      *
-     * Заполняется только если nginx проброшен через fastcgi_param
-     * SSL_PROTOCOL/SSL_CIPHER (стоковый fastcgi_params их не передаёт).
-     * Иначе возвращается null и блок в UI не отображается.
+     * Данные заполняет nginx через fastcgi_param SSL_PROTOCOL/SSL_CIPHER (стоковый
+     * fastcgi_params их не передаёт). Возвращает состояние, чтобы UI отличал
+     * «параметр не проброшен» от «проброшен, но соединение до nginx без TLS»:
      *
-     * @return array{protocol: string, cipher: string}|null
+     *  - 'absent' — ключей нет в $_SERVER: fastcgi_param не добавлен в этот
+     *               location/vhost либо nginx не перечитан. На проде типично, когда
+     *               параметр добавлен в :80-блок, а запрос обслуживает :443-клон Certbot.
+     *  - 'plain'  — ключи есть, но пустые: до nginx запрос пришёл не по TLS
+     *               (dev на `listen 80` или терминация TLS выше по стеку).
+     *  - 'ok'     — TLS завершается на nginx, есть протокол и шифр.
+     *
+     * @return array{state: string, protocol?: string, cipher?: string}
      */
-    private function getTlsInfo(): ?array
+    private function getTlsInfo(): array
     {
-        $protocol = (string)($_SERVER['SSL_PROTOCOL'] ?? '');
-        $cipher = (string)($_SERVER['SSL_CIPHER'] ?? '');
+        $hasKeys = array_key_exists('SSL_PROTOCOL', $_SERVER)
+            || array_key_exists('SSL_CIPHER', $_SERVER);
+
+        if (!$hasKeys) {
+            return ['state' => 'absent'];
+        }
+
+        $protocol = trim((string)($_SERVER['SSL_PROTOCOL'] ?? ''));
+        $cipher = trim((string)($_SERVER['SSL_CIPHER'] ?? ''));
 
         if ($protocol === '' && $cipher === '') {
-            return null;
+            return ['state' => 'plain'];
         }
 
         return [
+            'state' => 'ok',
             'protocol' => $protocol !== '' ? $protocol : 'N/A',
             'cipher' => $cipher !== '' ? $cipher : 'N/A',
         ];

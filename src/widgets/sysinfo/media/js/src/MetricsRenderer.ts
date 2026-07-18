@@ -380,10 +380,18 @@ export class MetricsRenderer {
                 <dd class="col-sm-8"><code>${nginx.gateway || 'N/A'}</code></dd>
             `;
 
-            if (nginx.tls && nginx.tls.protocol) {
+            if (nginx.tls) {
+                let tlsValue: string;
+                if (nginx.tls.state === 'ok') {
+                    tlsValue = `${nginx.tls.protocol} / <code>${nginx.tls.cipher || 'N/A'}</code>`;
+                } else if (nginx.tls.state === 'plain') {
+                    tlsValue = '<span class="text-muted">запрос к nginx без TLS (dev :80 / терминация выше)</span>';
+                } else {
+                    tlsValue = '<span class="text-warning">fastcgi_param SSL_* не проброшен в этот vhost</span>';
+                }
                 rows += `
                     <dt class="col-sm-4">TLS:</dt>
-                    <dd class="col-sm-8">${nginx.tls.protocol} / <code>${nginx.tls.cipher || 'N/A'}</code></dd>
+                    <dd class="col-sm-8">${tlsValue}</dd>
                 `;
             }
 

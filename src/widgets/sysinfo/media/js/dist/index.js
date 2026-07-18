@@ -349,10 +349,14 @@ class m {
                 <dt class="col-sm-4">Gateway:</dt>
                 <dd class="col-sm-8"><code>${t.gateway || "N/A"}</code></dd>
             `;
-      t.tls && t.tls.protocol && (d += `
+      if (t.tls) {
+        let o;
+        t.tls.state === "ok" ? o = `${t.tls.protocol} / <code>${t.tls.cipher || "N/A"}</code>` : t.tls.state === "plain" ? o = '<span class="text-muted">запрос к nginx без TLS (dev :80 / терминация выше)</span>' : o = '<span class="text-warning">fastcgi_param SSL_* не проброшен в этот vhost</span>', d += `
                     <dt class="col-sm-4">TLS:</dt>
-                    <dd class="col-sm-8">${t.tls.protocol} / <code>${t.tls.cipher || "N/A"}</code></dd>
-                `), t.build && t.build.tlsLibrary && (d += `
+                    <dd class="col-sm-8">${o}</dd>
+                `;
+      }
+      t.build && t.build.tlsLibrary && (d += `
                     <dt class="col-sm-4">TLS lib:</dt>
                     <dd class="col-sm-8"><small>${t.build.tlsLibrary}</small></dd>
                 `), this.renderHtml("services-nginx", `<dl class="row mb-0">${d}</dl>`);
@@ -593,7 +597,7 @@ class p {
     this.cpuChart && (this.cpuChart.destroy(), this.cpuChart = null), this.memoryChart && (this.memoryChart.destroy(), this.memoryChart = null);
   }
 }
-class u {
+class g {
   constructor(e, t) {
     this.apiService = e, this.errorHandler = t, this.modalElement = document.getElementById("dockerLogsModal"), this.modalElement && typeof window.bootstrap < "u" && (this.modal = new window.bootstrap.Modal(this.modalElement));
   }
@@ -704,7 +708,7 @@ const r = class r {
 };
 r.STORAGE_KEY = "sysinfo_settings";
 let i = r;
-class g {
+class u {
   /**
    * Обработать ошибку
    */
@@ -761,7 +765,7 @@ class f {
     } catch {
       throw new Error("Failed to parse widget configuration");
     }
-    this.errorHandler = new g(), this.apiService = new c(this.config.endpoints, this.config.csrfToken), this.metricsRenderer = new m(), this.chartManager = new p(), this.dockerLogsModal = new u(this.apiService, this.errorHandler), this.settingsManager = new i({
+    this.errorHandler = new u(), this.apiService = new c(this.config.endpoints, this.config.csrfToken), this.metricsRenderer = new m(), this.chartManager = new p(), this.dockerLogsModal = new g(this.apiService, this.errorHandler), this.settingsManager = new i({
       updateInterval: this.config.updateInterval,
       autoRefresh: this.config.autoRefresh
     }), this.realtimeUpdater = new h(
@@ -821,12 +825,12 @@ class f {
     const s = document.getElementById("sysinfo-btn-settings");
     s && s.addEventListener("click", () => this.handleSettingsClick());
     const a = document.getElementById("sysinfo-export-json");
-    a && a.addEventListener("click", (l) => {
-      l.preventDefault(), window.location.href = this.apiService.getExportJsonUrl();
+    a && a.addEventListener("click", (o) => {
+      o.preventDefault(), window.location.href = this.apiService.getExportJsonUrl();
     });
     const n = document.getElementById("sysinfo-export-csv");
-    n && n.addEventListener("click", (l) => {
-      l.preventDefault(), window.location.href = this.apiService.getExportCsvUrl();
+    n && n.addEventListener("click", (o) => {
+      o.preventDefault(), window.location.href = this.apiService.getExportCsvUrl();
     });
     const d = document.getElementById("settings-save");
     d && d.addEventListener("click", () => this.handleSaveSettings());
@@ -893,8 +897,8 @@ document.addEventListener("DOMContentLoaded", () => {
 export {
   c as ApiService,
   p as ChartManager,
-  u as DockerLogsModal,
-  g as ErrorHandler,
+  g as DockerLogsModal,
+  u as ErrorHandler,
   m as MetricsRenderer,
   h as RealtimeUpdater,
   i as SettingsManager,
