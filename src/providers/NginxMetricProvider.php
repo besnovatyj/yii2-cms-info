@@ -10,15 +10,15 @@ namespace Besnovatyj\Info\providers;
 /**
  * Провайдер метрик веб-сервера Nginx.
  *
- * Основной источник данных — суперглобальный $_SERVER, который PHP-FPM получает
+ * Основной источник данных — суперглобальный $_SERVER, который PHP получает
  * от nginx через fastcgi_params: стоковый файл передаёт
  * `SERVER_SOFTWARE nginx/$nginx_version` и `SERVER_PROTOCOL`. Это работает без
- * shell-вызовов и под FPM-hardening (disable_functions), в отличие от `nginx -v`,
- * который используется лишь как резерв на bare-metal окружении.
+ * shell-вызовов и при отключённых через disable_functions функциях, в отличие
+ * от `nginx -v`, который используется лишь как резерв.
  *
- * В dev (nginx в отдельном Docker-контейнере) бинаря nginx в php-контейнере нет —
- * версия всё равно определяется по SERVER_SOFTWARE, а резервный вызов деградирует
- * в null, не роняя блок метрик.
+ * Если бинарь nginx недоступен из PHP-процесса (nginx и PHP разнесены, либо
+ * shell_exec отключён), версия всё равно определяется по SERVER_SOFTWARE, а
+ * резервный вызов деградирует в null, не роняя блок метрик.
  */
 class NginxMetricProvider extends BaseMetricProvider
 {
@@ -48,7 +48,7 @@ class NginxMetricProvider extends BaseMetricProvider
             return true;
         }
 
-        // Резерв: bare-metal, где доступен бинарь nginx (если shell не отключён).
+        // Резерв: доступен бинарь nginx из PHP-процесса (если shell не отключён).
         return $this->versionFromBinary() !== null;
     }
 
@@ -161,10 +161,9 @@ class NginxMetricProvider extends BaseMetricProvider
      * «параметр не проброшен» от «проброшен, но соединение до nginx без TLS»:
      *
      *  - 'absent' — ключей нет в $_SERVER: fastcgi_param не добавлен в этот
-     *               location/vhost либо nginx не перечитан. На проде типично, когда
-     *               параметр добавлен в :80-блок, а запрос обслуживает :443-клон Certbot.
+     *               location/vhost либо nginx не перечитан.
      *  - 'plain'  — ключи есть, но пустые: до nginx запрос пришёл не по TLS
-     *               (dev на `listen 80` или терминация TLS выше по стеку).
+     *               (nginx слушает plain HTTP либо TLS терминируется выше по стеку).
      *  - 'ok'     — TLS завершается на nginx, есть протокол и шифр.
      *
      * @return array{state: string, protocol?: string, cipher?: string}
@@ -195,8 +194,8 @@ class NginxMetricProvider extends BaseMetricProvider
     /**
      * Информация о сборке nginx (`nginx -V`): версия TLS-библиотеки и число модулей.
      *
-     * Доступна только на bare-metal при включённом shell_exec; под FPM-hardening
-     * или в dev (нет бинаря) деградирует в пустой массив.
+     * Доступна только при включённом shell_exec и доступном из PHP бинаре nginx;
+     * иначе (функция отключена или бинаря нет) деградирует в пустой массив.
      *
      * @return array
      */

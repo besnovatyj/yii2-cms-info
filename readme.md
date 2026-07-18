@@ -502,11 +502,11 @@ DBSIZE
 - `$_SERVER['HTTPS']` / `REQUEST_SCHEME` / `SERVER_PORT` — признак TLS
 - `$_SERVER['SSL_PROTOCOL']` / `SSL_CIPHER` — живой TLS-протокол и шифр (только если проброшены через `fastcgi_param`, см. ниже)
 
-**Резервные источники (только bare-metal, если `shell_exec` не в `disable_functions`):**
+**Резервные источники (если бинарь nginx доступен из PHP и `shell_exec` не в `disable_functions`):**
 - `nginx -v` — версия, когда `SERVER_SOFTWARE` скрыт/переопределён
 - `nginx -V` — TLS-библиотека сборки (OpenSSL) и число `--with-*_module`
 
-В dev nginx работает в отдельном контейнере — бинаря в php-контейнере нет, резервные вызовы тихо деградируют, версия берётся из `SERVER_SOFTWARE`.
+Если бинарь nginx недоступен из PHP-процесса (nginx и PHP разнесены, либо `shell_exec` отключён), резервные вызовы тихо деградируют в null — версия берётся из `SERVER_SOFTWARE`.
 
 **Возвращаемая структура:**
 ```php
@@ -537,7 +537,7 @@ DBSIZE
 | state | Значение | Причина |
 |-------|----------|---------|
 | `ok` | TLS завершается на nginx, есть протокол/шифр | всё настроено |
-| `plain` | `SSL_*` проброшены, но пустые | запрос к nginx без TLS (dev `listen 80` или терминация выше по стеку) |
+| `plain` | `SSL_*` проброшены, но пустые | запрос к nginx без TLS (nginx слушает plain HTTP или TLS терминируется выше по стеку) |
 | `absent` | ключей `SSL_*` нет в `$_SERVER` | `fastcgi_param` не добавлен в этот `location`/vhost, либо nginx не перечитан |
 
 **Проброс живого TLS (опционально).** Стоковый `fastcgi_params` не передаёт TLS-параметры. Чтобы блок `tls.state = ok` заполнялся, добавьте **внутри** `location ~ \.php$` (nginx наследует `fastcgi_param` от родителя только если в location нет собственных — а он есть):
@@ -545,7 +545,7 @@ DBSIZE
 fastcgi_param SSL_PROTOCOL $ssl_protocol;
 fastcgi_param SSL_CIPHER   $ssl_cipher;
 ```
-Это read-only, несекретные значения (клиент их и так знает) — безопасно для production. На проде с Certbot добавляйте в шаблон и **пересоздавайте** :443-блоки certbot'ом, иначе параметр попадёт лишь в неиспользуемый :80-блок.
+Это read-only, несекретные значения (клиент их и так знает) — безопасно для production. Если TLS терминируется до nginx (reverse-proxy, балансировщик), эти переменные будут пустыми — провайдер покажет `tls.state = plain`, это ожидаемо.
 
 #### ApplicationMetricProvider
 
