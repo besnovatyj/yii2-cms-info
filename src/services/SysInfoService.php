@@ -10,6 +10,7 @@ namespace Besnovatyj\Info\services;
 use Besnovatyj\Info\providers\ApplicationMetricProvider;
 use Besnovatyj\Info\providers\DatabaseMetricProvider;
 use Besnovatyj\Info\providers\DockerMetricProvider;
+use Besnovatyj\Info\providers\NginxMetricProvider;
 use Besnovatyj\Info\providers\PhpMetricProvider;
 use Besnovatyj\Info\providers\RedisMetricProvider;
 use Besnovatyj\Info\providers\SystemMetricProvider;
@@ -46,6 +47,11 @@ class SysInfoService
     private RedisMetricProvider $redisProvider;
 
     /**
+     * @var NginxMetricProvider
+     */
+    private NginxMetricProvider $nginxProvider;
+
+    /**
      * @var ApplicationMetricProvider
      */
     private ApplicationMetricProvider $applicationProvider;
@@ -58,6 +64,7 @@ class SysInfoService
      * @param DockerMetricProvider $dockerProvider
      * @param DatabaseMetricProvider $databaseProvider
      * @param RedisMetricProvider $redisProvider
+     * @param NginxMetricProvider $nginxProvider
      * @param ApplicationMetricProvider $applicationProvider
      */
     public function __construct(
@@ -66,6 +73,7 @@ class SysInfoService
         DockerMetricProvider $dockerProvider,
         DatabaseMetricProvider $databaseProvider,
         RedisMetricProvider $redisProvider,
+        NginxMetricProvider $nginxProvider,
         ApplicationMetricProvider $applicationProvider
     ) {
         $this->systemProvider = $systemProvider;
@@ -73,6 +81,7 @@ class SysInfoService
         $this->dockerProvider = $dockerProvider;
         $this->databaseProvider = $databaseProvider;
         $this->redisProvider = $redisProvider;
+        $this->nginxProvider = $nginxProvider;
         $this->applicationProvider = $applicationProvider;
     }
 
@@ -91,6 +100,7 @@ class SysInfoService
             'docker' => $this->dockerProvider->getMetrics(),
             'database' => $this->databaseProvider->getMetrics(),
             'redis' => $this->redisProvider->getMetrics(),
+            'nginx' => $this->nginxProvider->getMetrics(),
             'application' => $this->applicationProvider->getMetrics(),
         ];
     }

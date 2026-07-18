@@ -46,7 +46,7 @@ class c {
    */
   getHeaders() {
     const e = new Headers();
-    return e.append("X-CSRF-Token", this.csrfToken), e.append("X-Requested-With", "XMLHttpRequest"), e.append("X-Requested-With-Fetch", "true"), e.append("Accept", "application/json"), e;
+    return e.append("X-CSRF-Token", this.csrfToken), e.append("X-Requested-With", "XMLHttpRequest"), e.append("Accept", "application/json"), e;
   }
   /**
    * Получить URL для экспорта JSON
@@ -179,11 +179,11 @@ class m {
                 <tbody>
         `;
     t.forEach((n) => {
-      const o = n.state === "running" ? '<span class="badge bg-success">Running</span>' : '<span class="badge bg-secondary">Stopped</span>';
+      const d = n.state === "running" ? '<span class="badge bg-success">Running</span>' : '<span class="badge bg-secondary">Stopped</span>';
       a += `
                 <tr>
                     <td><code>${n.name}</code></td>
-                    <td>${o}</td>
+                    <td>${d}</td>
                     <td><small class="text-muted">${n.image}</small></td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary docker-logs-btn"
@@ -301,12 +301,12 @@ class m {
     if (t.network && typeof t.network == "object") {
       let s = '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Interface</th><th>RX</th><th>TX</th></tr></thead><tbody>';
       for (const [a, n] of Object.entries(t.network)) {
-        const o = n;
+        const d = n;
         s += `
                     <tr>
                         <td><code>${a}</code></td>
-                        <td>${o.rxFormatted || "N/A"}</td>
-                        <td>${o.txFormatted || "N/A"}</td>
+                        <td>${d.rxFormatted || "N/A"}</td>
+                        <td>${d.txFormatted || "N/A"}</td>
                     </tr>
                 `;
       }
@@ -335,6 +335,28 @@ class m {
                 </dl>
             `);
     } else e.php?.available === !1 && this.renderHtml("services-php", '<p class="text-muted">PHP информация недоступна</p>');
+    if (e.nginx?.available && e.nginx.version !== void 0) {
+      const t = e.nginx, s = t.protocol || "N/A", a = t.http2 ? '<span class="badge bg-success">HTTP/2</span>' : `<span class="badge bg-warning text-dark">${s}</span>`, n = t.https ? '<span class="badge bg-success">HTTPS</span>' : '<span class="badge bg-secondary">нет</span>';
+      let d = `
+                <dt class="col-sm-4">Version:</dt>
+                <dd class="col-sm-8"><strong>${t.version || "N/A"}</strong></dd>
+                <dt class="col-sm-4">Software:</dt>
+                <dd class="col-sm-8"><code>${t.serverSoftware || "N/A"}</code></dd>
+                <dt class="col-sm-4">Protocol:</dt>
+                <dd class="col-sm-8">${a}</dd>
+                <dt class="col-sm-4">HTTPS:</dt>
+                <dd class="col-sm-8">${n}</dd>
+                <dt class="col-sm-4">Gateway:</dt>
+                <dd class="col-sm-8"><code>${t.gateway || "N/A"}</code></dd>
+            `;
+      t.tls && t.tls.protocol && (d += `
+                    <dt class="col-sm-4">TLS:</dt>
+                    <dd class="col-sm-8">${t.tls.protocol} / <code>${t.tls.cipher || "N/A"}</code></dd>
+                `), t.build && t.build.tlsLibrary && (d += `
+                    <dt class="col-sm-4">TLS lib:</dt>
+                    <dd class="col-sm-8"><small>${t.build.tlsLibrary}</small></dd>
+                `), this.renderHtml("services-nginx", `<dl class="row mb-0">${d}</dl>`);
+    } else e.nginx?.available === !1 && this.renderHtml("services-nginx", '<p class="text-muted">Nginx информация недоступна</p>');
     if (e.database?.available && e.database.driver) {
       const t = e.database;
       this.renderHtml("services-mysql", `
@@ -681,7 +703,7 @@ const r = class r {
   }
 };
 r.STORAGE_KEY = "sysinfo_settings";
-let l = r;
+let i = r;
 class g {
   /**
    * Обработать ошибку
@@ -739,7 +761,7 @@ class f {
     } catch {
       throw new Error("Failed to parse widget configuration");
     }
-    this.errorHandler = new g(), this.apiService = new c(this.config.endpoints, this.config.csrfToken), this.metricsRenderer = new m(), this.chartManager = new p(), this.dockerLogsModal = new u(this.apiService, this.errorHandler), this.settingsManager = new l({
+    this.errorHandler = new g(), this.apiService = new c(this.config.endpoints, this.config.csrfToken), this.metricsRenderer = new m(), this.chartManager = new p(), this.dockerLogsModal = new u(this.apiService, this.errorHandler), this.settingsManager = new i({
       updateInterval: this.config.updateInterval,
       autoRefresh: this.config.autoRefresh
     }), this.realtimeUpdater = new h(
@@ -799,15 +821,15 @@ class f {
     const s = document.getElementById("sysinfo-btn-settings");
     s && s.addEventListener("click", () => this.handleSettingsClick());
     const a = document.getElementById("sysinfo-export-json");
-    a && a.addEventListener("click", (i) => {
-      i.preventDefault(), window.location.href = this.apiService.getExportJsonUrl();
+    a && a.addEventListener("click", (l) => {
+      l.preventDefault(), window.location.href = this.apiService.getExportJsonUrl();
     });
     const n = document.getElementById("sysinfo-export-csv");
-    n && n.addEventListener("click", (i) => {
-      i.preventDefault(), window.location.href = this.apiService.getExportCsvUrl();
+    n && n.addEventListener("click", (l) => {
+      l.preventDefault(), window.location.href = this.apiService.getExportCsvUrl();
     });
-    const o = document.getElementById("settings-save");
-    o && o.addEventListener("click", () => this.handleSaveSettings());
+    const d = document.getElementById("settings-save");
+    d && d.addEventListener("click", () => this.handleSaveSettings());
   }
   /**
    * Прикрепить обработчики к кнопкам Docker логов
@@ -851,8 +873,8 @@ class f {
       this.settingsManager.setUpdateInterval(s), this.settingsManager.setAutoRefresh(a), this.realtimeUpdater.setInterval(s), a && !this.realtimeUpdater.isActive() ? this.realtimeUpdater.start() : !a && this.realtimeUpdater.isActive() && this.realtimeUpdater.stop(), this.errorHandler.success("Настройки сохранены");
       const n = document.getElementById("settingsModal");
       if (n && typeof window.bootstrap < "u") {
-        const o = window.bootstrap.Modal.getInstance(n);
-        o && o.hide();
+        const d = window.bootstrap.Modal.getInstance(n);
+        d && d.hide();
       }
     }
   }
@@ -875,7 +897,7 @@ export {
   g as ErrorHandler,
   m as MetricsRenderer,
   h as RealtimeUpdater,
-  l as SettingsManager,
+  i as SettingsManager,
   f as SysInfoWidget
 };
 //# sourceMappingURL=index.js.map

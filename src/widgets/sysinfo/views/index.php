@@ -286,6 +286,16 @@ use yii\web\View;
                 </div>
                 <div class="col-lg-6">
                     <div class="card">
+                        <div class="card-header"><i class="bi bi-hdd-network"></i> Nginx</div>
+                        <div class="card-body">
+                            <div id="services-nginx" class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
                         <div class="card-header"><i class="bi bi-database"></i> MySQL</div>
                         <div class="card-body">
                             <div id="services-mysql" class="placeholder-glow">

@@ -8,6 +8,7 @@
 use Besnovatyj\Info\providers\ApplicationMetricProvider;
 use Besnovatyj\Info\providers\DatabaseMetricProvider;
 use Besnovatyj\Info\providers\DockerMetricProvider;
+use Besnovatyj\Info\providers\NginxMetricProvider;
 use Besnovatyj\Info\providers\PhpMetricProvider;
 use Besnovatyj\Info\providers\RedisMetricProvider;
 use Besnovatyj\Info\providers\SystemMetricProvider;
@@ -25,6 +26,7 @@ return function (\yii\di\Container $container): void {
     $container->setSingleton(DockerMetricProvider::class, DockerMetricProvider::class);
     $container->setSingleton(DatabaseMetricProvider::class, DatabaseMetricProvider::class);
     $container->setSingleton(RedisMetricProvider::class, RedisMetricProvider::class);
+    $container->setSingleton(NginxMetricProvider::class, NginxMetricProvider::class);
     $container->setSingleton(ApplicationMetricProvider::class, ApplicationMetricProvider::class);
 
     // Сервис с инъекцией всех провайдеров
@@ -34,6 +36,7 @@ return function (\yii\di\Container $container): void {
         dockerProvider: $container->get(DockerMetricProvider::class),
         databaseProvider: $container->get(DatabaseMetricProvider::class),
         redisProvider: $container->get(RedisMetricProvider::class),
+        nginxProvider: $container->get(NginxMetricProvider::class),
         applicationProvider: $container->get(ApplicationMetricProvider::class),
     ));
 };

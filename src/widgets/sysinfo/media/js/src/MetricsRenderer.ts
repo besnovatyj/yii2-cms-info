@@ -356,6 +356,49 @@ export class MetricsRenderer {
         }
         // Если данных нет вообще - не обновляем (пропускаем)
 
+        // Nginx - проверяем полные данные (version приходит только при полной загрузке)
+        if (metrics.nginx?.available && metrics.nginx.version !== undefined) {
+            const nginx = metrics.nginx;
+            const protocol = nginx.protocol || 'N/A';
+            const protoBadge = nginx.http2
+                ? '<span class="badge bg-success">HTTP/2</span>'
+                : `<span class="badge bg-warning text-dark">${protocol}</span>`;
+            const httpsBadge = nginx.https
+                ? '<span class="badge bg-success">HTTPS</span>'
+                : '<span class="badge bg-secondary">нет</span>';
+
+            let rows = `
+                <dt class="col-sm-4">Version:</dt>
+                <dd class="col-sm-8"><strong>${nginx.version || 'N/A'}</strong></dd>
+                <dt class="col-sm-4">Software:</dt>
+                <dd class="col-sm-8"><code>${nginx.serverSoftware || 'N/A'}</code></dd>
+                <dt class="col-sm-4">Protocol:</dt>
+                <dd class="col-sm-8">${protoBadge}</dd>
+                <dt class="col-sm-4">HTTPS:</dt>
+                <dd class="col-sm-8">${httpsBadge}</dd>
+                <dt class="col-sm-4">Gateway:</dt>
+                <dd class="col-sm-8"><code>${nginx.gateway || 'N/A'}</code></dd>
+            `;
+
+            if (nginx.tls && nginx.tls.protocol) {
+                rows += `
+                    <dt class="col-sm-4">TLS:</dt>
+                    <dd class="col-sm-8">${nginx.tls.protocol} / <code>${nginx.tls.cipher || 'N/A'}</code></dd>
+                `;
+            }
+
+            if (nginx.build && nginx.build.tlsLibrary) {
+                rows += `
+                    <dt class="col-sm-4">TLS lib:</dt>
+                    <dd class="col-sm-8"><small>${nginx.build.tlsLibrary}</small></dd>
+                `;
+            }
+
+            this.renderHtml('services-nginx', `<dl class="row mb-0">${rows}</dl>`);
+        } else if (metrics.nginx?.available === false) {
+            this.renderHtml('services-nginx', '<p class="text-muted">Nginx информация недоступна</p>');
+        }
+
         // MySQL/Database - проверяем полные данные
         if (metrics.database?.available && metrics.database.driver) {
             const db = metrics.database;
