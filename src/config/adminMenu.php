@@ -16,11 +16,6 @@ return [
         '_meta' => [
             'placements' => [
                 [
-                    'location' => 'left-sidebar',
-                    'group' => null,
-                    'priority' => 100,
-                ],
-                [
                     'location' => 'right-sidebar',
                     'group' => null,
                     'priority' => 100,
