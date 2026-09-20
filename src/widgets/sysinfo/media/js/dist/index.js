@@ -77,6 +77,18 @@ class m {
     s && (e ? (s.className = "badge bg-success", s.textContent = "Подключено") : (s.className = "badge bg-danger", s.textContent = t || "Отключено"));
   }
   /**
+   * Обновить индикатор авто-обновления в шапке
+   */
+  updateAutoRefresh(e, t) {
+    const s = document.getElementById("sysinfo-auto-refresh");
+    if (s)
+      if (e) {
+        const a = Math.round(t / 1e3);
+        s.textContent = `ВКЛ (каждые ${a} сек)`;
+      } else
+        s.textContent = "ВЫКЛ";
+  }
+  /**
    * Обновить вкладку Overview
    */
   renderOverview(e) {
@@ -179,11 +191,11 @@ class m {
                 <tbody>
         `;
     t.forEach((n) => {
-      const d = n.state === "running" ? '<span class="badge bg-success">Running</span>' : '<span class="badge bg-secondary">Stopped</span>';
+      const o = n.state === "running" ? '<span class="badge bg-success">Running</span>' : '<span class="badge bg-secondary">Stopped</span>';
       a += `
                 <tr>
                     <td><code>${n.name}</code></td>
-                    <td>${d}</td>
+                    <td>${o}</td>
                     <td><small class="text-muted">${n.image}</small></td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary docker-logs-btn"
@@ -301,12 +313,12 @@ class m {
     if (t.network && typeof t.network == "object") {
       let s = '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Interface</th><th>RX</th><th>TX</th></tr></thead><tbody>';
       for (const [a, n] of Object.entries(t.network)) {
-        const d = n;
+        const o = n;
         s += `
                     <tr>
                         <td><code>${a}</code></td>
-                        <td>${d.rxFormatted || "N/A"}</td>
-                        <td>${d.txFormatted || "N/A"}</td>
+                        <td>${o.rxFormatted || "N/A"}</td>
+                        <td>${o.txFormatted || "N/A"}</td>
                     </tr>
                 `;
       }
@@ -337,7 +349,7 @@ class m {
     } else e.php?.available === !1 && this.renderHtml("services-php", '<p class="text-muted">PHP информация недоступна</p>');
     if (e.nginx?.available && e.nginx.version !== void 0) {
       const t = e.nginx, s = t.protocol || "N/A", a = t.http2 ? '<span class="badge bg-success">HTTP/2</span>' : `<span class="badge bg-warning text-dark">${s}</span>`, n = t.https ? '<span class="badge bg-success">HTTPS</span>' : '<span class="badge bg-secondary">нет</span>';
-      let d = `
+      let o = `
                 <dt class="col-sm-4">Version:</dt>
                 <dd class="col-sm-8"><strong>${t.version || "N/A"}</strong></dd>
                 <dt class="col-sm-4">Software:</dt>
@@ -350,16 +362,16 @@ class m {
                 <dd class="col-sm-8"><code>${t.gateway || "N/A"}</code></dd>
             `;
       if (t.tls) {
-        let o;
-        t.tls.state === "ok" ? o = `${t.tls.protocol} / <code>${t.tls.cipher || "N/A"}</code>` : t.tls.state === "plain" ? o = '<span class="text-muted">запрос к nginx без TLS (dev :80 / терминация выше)</span>' : o = '<span class="text-warning">fastcgi_param SSL_* не проброшен в этот vhost</span>', d += `
+        let d;
+        t.tls.state === "ok" ? d = `${t.tls.protocol} / <code>${t.tls.cipher || "N/A"}</code>` : t.tls.state === "plain" ? d = '<span class="text-muted">запрос к nginx без TLS (dev :80 / терминация выше)</span>' : d = '<span class="text-warning">fastcgi_param SSL_* не проброшен в этот vhost</span>', o += `
                     <dt class="col-sm-4">TLS:</dt>
-                    <dd class="col-sm-8">${o}</dd>
+                    <dd class="col-sm-8">${d}</dd>
                 `;
       }
-      t.build && t.build.tlsLibrary && (d += `
+      t.build && t.build.tlsLibrary && (o += `
                     <dt class="col-sm-4">TLS lib:</dt>
                     <dd class="col-sm-8"><small>${t.build.tlsLibrary}</small></dd>
-                `), this.renderHtml("services-nginx", `<dl class="row mb-0">${d}</dl>`);
+                `), this.renderHtml("services-nginx", `<dl class="row mb-0">${o}</dl>`);
     } else e.nginx?.available === !1 && this.renderHtml("services-nginx", '<p class="text-muted">Nginx информация недоступна</p>');
     if (e.database?.available && e.database.driver) {
       const t = e.database;
@@ -597,7 +609,7 @@ class p {
     this.cpuChart && (this.cpuChart.destroy(), this.cpuChart = null), this.memoryChart && (this.memoryChart.destroy(), this.memoryChart = null);
   }
 }
-class g {
+class u {
   constructor(e, t) {
     this.apiService = e, this.errorHandler = t, this.modalElement = document.getElementById("dockerLogsModal"), this.modalElement && typeof window.bootstrap < "u" && (this.modal = new window.bootstrap.Modal(this.modalElement));
   }
@@ -624,21 +636,28 @@ class g {
    * Отобразить логи в модальном окне
    */
   displayLogs(e) {
-    const t = document.getElementById("docker-logs-content");
-    if (t) {
-      const s = t.querySelector("code");
-      s && (s.textContent = e || "No logs available"), t.scrollTop = t.scrollHeight;
-    }
+    this.setContent(e || "No logs available", !1);
   }
   /**
    * Отобразить ошибку
    */
   displayError(e) {
-    const t = document.getElementById("docker-logs-content");
-    if (t) {
-      const s = t.querySelector("code");
-      s && (s.textContent = `Error: ${e}`), t.classList.add("text-danger");
-    }
+    this.setContent(`Error: ${e}`, !0);
+  }
+  /**
+   * Записать текст в тело модального окна.
+   *
+   * Элемент `<code>` создаётся заново, а не ищется в DOM: спиннер загрузки подменяет
+   * собой всё содержимое `<pre>` вместе с `<code>` из разметки, и поиск возвращал бы
+   * `null` — ответ сервера было бы некуда писать, а в окне навсегда оставался бы
+   * крутящийся спиннер. `textContent` заодно экранирует содержимое логов.
+   */
+  setContent(e, t) {
+    const s = document.getElementById("docker-logs-content");
+    if (!s)
+      return;
+    const a = document.createElement("code");
+    a.textContent = e, s.replaceChildren(a), s.classList.toggle("text-danger", t), s.scrollTop = s.scrollHeight;
   }
   /**
    * Скрыть модальное окно
@@ -647,7 +666,7 @@ class g {
     this.modal && this.modal.hide();
   }
 }
-const r = class r {
+const l = class l {
   constructor(e) {
     this.settings = this.load(e);
   }
@@ -656,7 +675,7 @@ const r = class r {
    */
   load(e) {
     try {
-      const t = localStorage.getItem(r.STORAGE_KEY);
+      const t = localStorage.getItem(l.STORAGE_KEY);
       if (t)
         return { ...e, ...JSON.parse(t) };
     } catch (t) {
@@ -670,7 +689,7 @@ const r = class r {
   save(e) {
     this.settings = { ...this.settings, ...e };
     try {
-      localStorage.setItem(r.STORAGE_KEY, JSON.stringify(this.settings));
+      localStorage.setItem(l.STORAGE_KEY, JSON.stringify(this.settings));
     } catch (t) {
       console.warn("Failed to save settings to localStorage", t);
     }
@@ -706,9 +725,9 @@ const r = class r {
     this.save({ autoRefresh: e });
   }
 };
-r.STORAGE_KEY = "sysinfo_settings";
-let i = r;
-class u {
+l.STORAGE_KEY = "sysinfo_settings";
+let i = l;
+class g {
   /**
    * Обработать ошибку
    */
@@ -765,7 +784,7 @@ class f {
     } catch {
       throw new Error("Failed to parse widget configuration");
     }
-    this.errorHandler = new u(), this.apiService = new c(this.config.endpoints, this.config.csrfToken), this.metricsRenderer = new m(), this.chartManager = new p(), this.dockerLogsModal = new g(this.apiService, this.errorHandler), this.settingsManager = new i({
+    this.errorHandler = new g(), this.apiService = new c(this.config.endpoints, this.config.csrfToken), this.metricsRenderer = new m(), this.chartManager = new p(), this.dockerLogsModal = new u(this.apiService, this.errorHandler), this.settingsManager = new i({
       updateInterval: this.config.updateInterval,
       autoRefresh: this.config.autoRefresh
     }), this.realtimeUpdater = new h(
@@ -778,7 +797,7 @@ class f {
    */
   async initialize() {
     try {
-      this.setupEventHandlers(), await this.loadInitialMetrics(), this.settingsManager.isAutoRefreshEnabled() && this.realtimeUpdater.start(), console.log("[SysInfoWidget] Ready");
+      this.setupEventHandlers(), await this.loadInitialMetrics(), this.settingsManager.isAutoRefreshEnabled() && this.realtimeUpdater.start(), this.syncAutoRefreshControls(), console.log("[SysInfoWidget] Ready");
     } catch (e) {
       this.errorHandler.handle(e, "Initialization failed");
     }
@@ -821,19 +840,19 @@ class f {
     const e = document.getElementById("sysinfo-btn-refresh");
     e && e.addEventListener("click", () => this.handleRefreshClick());
     const t = document.getElementById("sysinfo-btn-pause");
-    t && t.addEventListener("click", () => this.handlePauseClick(t));
+    t && t.addEventListener("click", () => this.handlePauseClick());
     const s = document.getElementById("sysinfo-btn-settings");
     s && s.addEventListener("click", () => this.handleSettingsClick());
     const a = document.getElementById("sysinfo-export-json");
-    a && a.addEventListener("click", (o) => {
-      o.preventDefault(), window.location.href = this.apiService.getExportJsonUrl();
+    a && a.addEventListener("click", (d) => {
+      d.preventDefault(), window.location.href = this.apiService.getExportJsonUrl();
     });
     const n = document.getElementById("sysinfo-export-csv");
-    n && n.addEventListener("click", (o) => {
-      o.preventDefault(), window.location.href = this.apiService.getExportCsvUrl();
+    n && n.addEventListener("click", (d) => {
+      d.preventDefault(), window.location.href = this.apiService.getExportCsvUrl();
     });
-    const d = document.getElementById("settings-save");
-    d && d.addEventListener("click", () => this.handleSaveSettings());
+    const o = document.getElementById("settings-save");
+    o && o.addEventListener("click", () => this.handleSaveSettings());
   }
   /**
    * Прикрепить обработчики к кнопкам Docker логов
@@ -855,8 +874,16 @@ class f {
   /**
    * Обработчик клика по кнопке паузы
    */
-  handlePauseClick(e) {
-    this.realtimeUpdater.toggle() ? (e.innerHTML = '<i class="bi bi-pause-fill"></i> Пауза', this.errorHandler.info("Авто-обновление возобновлено")) : (e.innerHTML = '<i class="bi bi-play-fill"></i> Возобновить', this.errorHandler.info("Авто-обновление приостановлено"));
+  handlePauseClick() {
+    const e = this.realtimeUpdater.toggle();
+    this.syncAutoRefreshControls(), e ? this.errorHandler.info("Авто-обновление возобновлено") : this.errorHandler.info("Авто-обновление приостановлено");
+  }
+  /**
+   * Привести кнопку паузы и индикатор в шапке к текущему состоянию updater'а
+   */
+  syncAutoRefreshControls() {
+    const e = this.realtimeUpdater.isActive(), t = document.getElementById("sysinfo-btn-pause");
+    t && (t.innerHTML = e ? '<i class="bi bi-pause-fill"></i> Пауза' : '<i class="bi bi-play-fill"></i> Возобновить'), this.metricsRenderer.updateAutoRefresh(e, this.realtimeUpdater.getInterval());
   }
   /**
    * Обработчик клика по кнопке настроек
@@ -874,11 +901,11 @@ class f {
     const e = document.getElementById("settings-update-interval"), t = document.getElementById("settings-auto-refresh");
     if (e && t) {
       const s = parseInt(e.value) * 1e3, a = t.checked;
-      this.settingsManager.setUpdateInterval(s), this.settingsManager.setAutoRefresh(a), this.realtimeUpdater.setInterval(s), a && !this.realtimeUpdater.isActive() ? this.realtimeUpdater.start() : !a && this.realtimeUpdater.isActive() && this.realtimeUpdater.stop(), this.errorHandler.success("Настройки сохранены");
+      this.settingsManager.setUpdateInterval(s), this.settingsManager.setAutoRefresh(a), this.realtimeUpdater.setInterval(s), a && !this.realtimeUpdater.isActive() ? this.realtimeUpdater.start() : !a && this.realtimeUpdater.isActive() && this.realtimeUpdater.stop(), this.syncAutoRefreshControls(), this.errorHandler.success("Настройки сохранены");
       const n = document.getElementById("settingsModal");
       if (n && typeof window.bootstrap < "u") {
-        const d = window.bootstrap.Modal.getInstance(n);
-        d && d.hide();
+        const o = window.bootstrap.Modal.getInstance(n);
+        o && o.hide();
       }
     }
   }
@@ -897,8 +924,8 @@ document.addEventListener("DOMContentLoaded", () => {
 export {
   c as ApiService,
   p as ChartManager,
-  g as DockerLogsModal,
-  u as ErrorHandler,
+  u as DockerLogsModal,
+  g as ErrorHandler,
   m as MetricsRenderer,
   h as RealtimeUpdater,
   i as SettingsManager,

@@ -68,31 +68,39 @@ export class DockerLogsModal {
      * Отобразить логи в модальном окне
      */
     private displayLogs(logs: string): void {
-        const contentElement = document.getElementById('docker-logs-content');
-        if (contentElement) {
-            // Экранирование HTML для безопасности
-            const code = contentElement.querySelector('code');
-            if (code) {
-                code.textContent = logs || 'No logs available';
-            }
-
-            // Прокрутка вниз
-            contentElement.scrollTop = contentElement.scrollHeight;
-        }
+        this.setContent(logs || 'No logs available', false);
     }
 
     /**
      * Отобразить ошибку
      */
     private displayError(message: string): void {
+        this.setContent(`Error: ${message}`, true);
+    }
+
+    /**
+     * Записать текст в тело модального окна.
+     *
+     * Элемент `<code>` создаётся заново, а не ищется в DOM: спиннер загрузки подменяет
+     * собой всё содержимое `<pre>` вместе с `<code>` из разметки, и поиск возвращал бы
+     * `null` — ответ сервера было бы некуда писать, а в окне навсегда оставался бы
+     * крутящийся спиннер. `textContent` заодно экранирует содержимое логов.
+     */
+    private setContent(text: string, isError: boolean): void {
         const contentElement = document.getElementById('docker-logs-content');
-        if (contentElement) {
-            const code = contentElement.querySelector('code');
-            if (code) {
-                code.textContent = `Error: ${message}`;
-            }
-            contentElement.classList.add('text-danger');
+        if (!contentElement) {
+            return;
         }
+
+        const code = document.createElement('code');
+        code.textContent = text;
+        contentElement.replaceChildren(code);
+
+        // Класс ошибки снимается явно, иначе он пережил бы следующую успешную загрузку.
+        contentElement.classList.toggle('text-danger', isError);
+
+        // Прокрутка вниз
+        contentElement.scrollTop = contentElement.scrollHeight;
     }
 
     /**

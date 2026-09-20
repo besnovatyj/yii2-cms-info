@@ -24,7 +24,7 @@ use yii\web\View;
         <div class="sysinfo-status">
             <span class="badge bg-success" id="sysinfo-status-badge">Подключено</span>
             <small class="text-muted ms-2">Обновлено: <span id="sysinfo-last-update">-</span></small>
-            <small class="text-muted ms-2">Авто-обновление: <span id="sysinfo-auto-refresh">ВКЛ (каждые 3 сек)</span></small>
+            <small class="text-muted ms-2">Авто-обновление: <span id="sysinfo-auto-refresh">-</span></small>
         </div>
 
         <div class="btn-group" role="group">

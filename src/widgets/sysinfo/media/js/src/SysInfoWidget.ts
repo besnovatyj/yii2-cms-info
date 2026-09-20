@@ -80,6 +80,8 @@ export class SysInfoWidget {
                 this.realtimeUpdater.start();
             }
 
+            this.syncAutoRefreshControls();
+
             console.log('[SysInfoWidget] Ready');
         } catch (error) {
             this.errorHandler.handle(error as Error, 'Initialization failed');
@@ -160,7 +162,7 @@ export class SysInfoWidget {
         // Кнопка паузы/возобновления
         const pauseBtn = document.getElementById('sysinfo-btn-pause');
         if (pauseBtn) {
-            pauseBtn.addEventListener('click', () => this.handlePauseClick(pauseBtn));
+            pauseBtn.addEventListener('click', () => this.handlePauseClick());
         }
 
         // Кнопка настроек
@@ -221,16 +223,32 @@ export class SysInfoWidget {
     /**
      * Обработчик клика по кнопке паузы
      */
-    private handlePauseClick(button: HTMLElement): void {
+    private handlePauseClick(): void {
         const isRunning = this.realtimeUpdater.toggle();
 
+        this.syncAutoRefreshControls();
+
         if (isRunning) {
-            button.innerHTML = '<i class="bi bi-pause-fill"></i> Пауза';
             this.errorHandler.info('Авто-обновление возобновлено');
         } else {
-            button.innerHTML = '<i class="bi bi-play-fill"></i> Возобновить';
             this.errorHandler.info('Авто-обновление приостановлено');
         }
+    }
+
+    /**
+     * Привести кнопку паузы и индикатор в шапке к текущему состоянию updater'а
+     */
+    private syncAutoRefreshControls(): void {
+        const isRunning = this.realtimeUpdater.isActive();
+
+        const pauseBtn = document.getElementById('sysinfo-btn-pause');
+        if (pauseBtn) {
+            pauseBtn.innerHTML = isRunning
+                ? '<i class="bi bi-pause-fill"></i> Пауза'
+                : '<i class="bi bi-play-fill"></i> Возобновить';
+        }
+
+        this.metricsRenderer.updateAutoRefresh(isRunning, this.realtimeUpdater.getInterval());
     }
 
     /**
@@ -278,6 +296,8 @@ export class SysInfoWidget {
             } else if (!newAutoRefresh && this.realtimeUpdater.isActive()) {
                 this.realtimeUpdater.stop();
             }
+
+            this.syncAutoRefreshControls();
 
             this.errorHandler.success('Настройки сохранены');
 

@@ -34,6 +34,23 @@ export class MetricsRenderer {
     }
 
     /**
+     * Обновить индикатор авто-обновления в шапке
+     */
+    updateAutoRefresh(enabled: boolean, intervalMs: number): void {
+        const element = document.getElementById('sysinfo-auto-refresh');
+        if (!element) {
+            return;
+        }
+
+        if (enabled) {
+            const seconds = Math.round(intervalMs / 1000);
+            element.textContent = `ВКЛ (каждые ${seconds} сек)`;
+        } else {
+            element.textContent = 'ВЫКЛ';
+        }
+    }
+
+    /**
      * Обновить вкладку Overview
      */
     renderOverview(metrics: any): void {
