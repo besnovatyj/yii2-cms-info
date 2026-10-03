@@ -4,6 +4,9 @@
  * Copyright (c) 2026 Besnovatyj. Licensed under the MIT License.
  */
 
+use Besnovatyj\Contracts\adminMenu\AdminMenuLocation;
+use Besnovatyj\Contracts\adminMenu\AdminMenuPlacement;
+
 return [
     // System Info
     [
@@ -15,11 +18,13 @@ return [
         },
         '_meta' => [
             'placements' => [
-                [
-                    'location' => 'right-sidebar',
-                    'group' => null,
-                    'priority' => 100,
-                ],
+                new AdminMenuPlacement(
+                    location: AdminMenuLocation::RightSidebar,
+                    group: 'Service',
+                    groupIcon: 'bi bi-sliders',
+                    groupPriority: 100,
+                    priority: 100,
+                ),
             ],
         ],
     ]
